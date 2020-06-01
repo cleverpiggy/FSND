@@ -33,11 +33,17 @@
 				<i class="fas fa-quote-left"></i> {{ artist.seeking_description }} <i class="fas fa-quote-right"></i>
 			</div>
 		</div>
-		{% else %}	
+		{% else %}
 		<p class="not-seeking">
 			<i class="fas fa-moon"></i> Not currently seeking performance venues
 		</p>
 		{% endif %}
+		<p>
+			<button onclick="window.location.href='/artists/{{ artist.id }}/edit'">edit</button>
+		</p>
+		<p>
+			<button id="delete-artist" data-id="{{ artist.id }}">delete</button>
+		</p>
 	</div>
 	<div class="col-sm-6">
 		<img src="{{ artist.image_link }}" alt="Venue Image" />
@@ -71,6 +77,16 @@
 		{% endfor %}
 	</div>
 </section>
-
+<script type="text/javascript">
+    //delete button functionality
+    const deleteButton = document.getElementById('delete-artist');
+    deleteButton.onclick = function(e){
+        const id = e.target.dataset['id'];
+        console.log(id);
+        fetch('/artists/' + id, {
+            method: 'DELETE'
+        })
+        .then(x => window.location.href = '/')
+    }
+</script>
 {% endblock %}
-

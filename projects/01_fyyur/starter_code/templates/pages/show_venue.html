@@ -36,15 +36,22 @@
 				<i class="fas fa-quote-left"></i> {{ venue.seeking_description }} <i class="fas fa-quote-right"></i>
 			</div>
 		</div>
-		{% else %}	
+		{% else %}
 		<p class="not-seeking">
 			<i class="fas fa-moon"></i> Not currently seeking talent
 		</p>
 		{% endif %}
+		<p>
+			<button onclick="window.location.href='/venues/{{ venue.id }}/edit'">edit</button>
+		</p>
+		<p>
+			<button id="delete-venue" data-id="{{ venue.id }}">delete</button>
+		</p>
 	</div>
 	<div class="col-sm-6">
 		<img src="{{ venue.image_link }}" alt="Venue Image" />
 	</div>
+
 </div>
 <section>
 	<h2 class="monospace">{{ venue.upcoming_shows_count }} Upcoming {% if venue.upcoming_shows_count == 1 %}Show{% else %}Shows{% endif %}</h2>
@@ -74,6 +81,16 @@
 		{% endfor %}
 	</div>
 </section>
-
+<script type="text/javascript">
+    //delete button functionality
+    const deleteButton = document.getElementById('delete-venue');
+    deleteButton.onclick = function(e){
+        const id = e.target.dataset['id'];
+        console.log(id);
+        fetch('/venues/' + id, {
+            method: 'DELETE'
+        })
+        .then(x => window.location.href = '/')
+    }
+</script>
 {% endblock %}
-
