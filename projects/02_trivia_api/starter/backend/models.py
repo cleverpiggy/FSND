@@ -19,17 +19,22 @@ def setup_db(app, database_path=database_path):
     db.init_app(app)
     db.create_all()
 
+
+def rollback():
+  db.session.rollback()
+
 '''
 Question
 
 '''
-class Question(db.Model):  
+class Question(db.Model):
   __tablename__ = 'questions'
 
   id = Column(Integer, primary_key=True)
   question = Column(String)
   answer = Column(String)
-  category = Column(String)
+  #the starter incorretly had string here
+  category = Column(Integer)
   difficulty = Column(Integer)
 
   def __init__(self, question, answer, category, difficulty):
@@ -41,13 +46,14 @@ class Question(db.Model):
   def insert(self):
     db.session.add(self)
     db.session.commit()
-  
+
   def update(self):
     db.session.commit()
 
   def delete(self):
     db.session.delete(self)
     db.session.commit()
+
 
   def format(self):
     return {
@@ -62,7 +68,7 @@ class Question(db.Model):
 Category
 
 '''
-class Category(db.Model):  
+class Category(db.Model):
   __tablename__ = 'categories'
 
   id = Column(Integer, primary_key=True)
