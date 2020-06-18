@@ -5,9 +5,9 @@ from jose import jwt
 from urllib.request import urlopen
 
 
-AUTH0_DOMAIN = 'udacity-fsnd.auth0.com'
+AUTH0_DOMAIN = 'cleverpiggy.auth0.com'
 ALGORITHMS = ['RS256']
-API_AUDIENCE = 'dev'
+API_AUDIENCE = 'coffeeshop'
 
 ## AuthError Exception
 '''
@@ -31,7 +31,26 @@ class AuthError(Exception):
     return the token part of the header
 '''
 def get_token_auth_header():
-   raise Exception('Not Implemented')
+    auth_header = request.headers.get('Authorization')
+    if auth_header is None:
+        raise AuthError({
+            'code': 'authorization_header_missing',
+            'description': "Authorization header required"
+        }, status_code=401)
+    #format is 'Bearer' {token}
+    try:
+        bearer, token = auth_header.split()
+    except ValueError:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': "Authorization header must be 'Bearer' {token}"
+        }, status_code=401)
+    if bearer.lower() != 'bearer':
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': "Authorization header must be 'Bearer' {token}"
+        }, status_code=401)
+    return token
 
 '''
 @TODO implement check_permissions(permission, payload) method
@@ -45,7 +64,18 @@ def get_token_auth_header():
     return true otherwise
 '''
 def check_permissions(permission, payload):
-    raise Exception('Not Implemented')
+    permissions = payload.get('permissions')
+    if permissions is None:
+        raise AuthError({
+            'code': 'invalid_claims',
+            'description': 'Permissions not included in JWT.'
+            }, status_code=401)
+    if permission not in permissions:
+        raise AuthError({
+            'code': 'invalid_claims',
+            'description': 'Permission not found.'
+            }, status_code=401)
+    return True
 
 '''
 @TODO implement verify_decode_jwt(token) method
@@ -61,7 +91,56 @@ def check_permissions(permission, payload):
     !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 '''
 def verify_decode_jwt(token):
-    raise Exception('Not Implemented')
+    token = get_token_auth_header()
+    jsonurl = urlopen("https://"+AUTH0_DOMAIN+"/.well-known/jwks.json")
+    jwks = json.loads(jsonurl.read())
+    unverified_header = jwt.get_unverified_header(token)
+    rsa_key = {}
+    if 'kid' not in unverified_header:
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization malformed.'
+        }, 401)
+
+    for key in jwks["keys"]:
+        if key["kid"] == unverified_header["kid"]:
+            rsa_key = {
+                "kty": key["kty"],
+                "kid": key["kid"],
+                "use": key["use"],
+                "n": key["n"],
+                "e": key["e"]
+            }
+    if rsa_key:
+        try:
+            payload = jwt.decode(
+                token,
+                rsa_key,
+                algorithms=ALGORITHMS,
+                audience=API_AUDIENCE,
+                issuer="https://"+AUTH0_DOMAIN+"/"
+            )
+            return payload
+
+        except jwt.ExpiredSignatureError:
+            raise AuthError({"code": "token_expired",
+                            "description": "token is expired"}, 401)
+        except jwt.JWTClaimsError:
+            raise AuthError({"code": "invalid_claims",
+                            "description":
+                                "incorrect claims,"
+                                "please check the audience and issuer"}, 401)
+        except Exception:
+            raise AuthError({"code": "invalid_header",
+                            "description":
+                                "Unable to parse authentication"
+                                " token."}, 401)
+
+    raise AuthError({
+        'code': 'invalid_header',
+        'description': 'Unable to find the appropriate key.'
+        }, 400)
+        #_request_ctx_stack.top.current_user = payload
 
 '''
 @TODO implement @requires_auth(permission) decorator method
